@@ -700,6 +700,8 @@ def check_curve_fitting(option_chain_data):
                         current_curve_fitted_result["trades"].append(curve_fitted_trade)
                         print(f"CURVE FITTED CALL: {buy_qty}x{base_strike}C / {sell_qty}x{higher_strike}C")
                         print(f"ATM Ratio: {atm_ratio:.4f}, Base Ratio: {base_ratio:.4f}")
+                    else:
+                        print(f"CURVE NOT FITTED CALL: {buy_qty}x{base_strike}C / {sell_qty}x{higher_strike}C")
 
         # Add to global curve fitted results if we found any
         if current_curve_fitted_result["trades"]:
@@ -790,11 +792,12 @@ def check_curve_fitting(option_chain_data):
                         current_curve_fitted_result["trades"].append(curve_fitted_trade)
                         print(f"CURVE FITTED PUT: {buy_qty}x{base_strike}P / {sell_qty}x{lower_strike}P")
                         print(f"ATM Ratio: {atm_ratio:.4f}, Base Ratio: {base_ratio:.4f}")
+                    else:
+                        print(f"CURVE NOT FITTED PUT: {buy_qty}x{base_strike}P / {sell_qty}x{lower_strike}P")
 
         # Add to global curve fitted results if we found any
         if current_curve_fitted_result["trades"]:
             curve_fitted_results["puts"].append(current_curve_fitted_result)
-            print("")
 
 def sort_table(tree, col, descending):
     """Sort the table by the selected column"""
@@ -1644,17 +1647,27 @@ def create_application_ui(root):
     option_notebook.add(curve_fitted_call_frame, text="Curve Fitted Calls")
     option_notebook.add(curve_fitted_put_frame, text="Curve Fitted Puts")
 
-    # Create displays for each tab
-    create_call_ratio_tables(call_ratio_tables_frame)
-    create_put_ratio_tables(put_ratio_tables_frame)
-    create_consolidated_display(call_ratio_spreads_frame, "calls")
-    create_consolidated_display(put_ratio_spreads_frame, "puts")
+    # CORRECTED: Swap the display function calls to match the tab content expectations
+
+    # Call Ratio Tables tab should show consolidated matrix view of call spreads
+    create_consolidated_display(call_ratio_tables_frame, "calls")
+
+    # Put Ratio Tables tab should show consolidated matrix view of put spreads
+    create_consolidated_display(put_ratio_tables_frame, "puts")
+
+    # Call Ratio Spreads tab should show the detailed table of call ratios
+    create_call_ratio_tables(call_ratio_spreads_frame)
+    #The below call shows another table below with only negative premium results
+    create_top_premium_table(call_ratio_spreads_frame, "calls")
+
+    # Put Ratio Spreads tab should show the detailed table of put ratios
+    create_put_ratio_tables(put_ratio_spreads_frame)
+    #The below call shows another table below with only negative premium results
+    create_top_premium_table(put_ratio_spreads_frame, "puts")
+
+    # Curve fitted tabs remain the same
     create_curve_fitted_call_table(curve_fitted_call_frame)
     create_curve_fitted_put_table(curve_fitted_put_frame)
-
-    # Create top premium tables for calls and puts
-    create_top_premium_table(call_ratio_spreads_frame, "calls")
-    create_top_premium_table(put_ratio_spreads_frame, "puts")
 
 def fetch_and_analyze(root):
     """Fetch and analyze data for all instruments"""
@@ -1746,45 +1759,8 @@ def fetch_and_analyze(root):
                 root.update()
                 time.sleep(1)
 
-        # Only rebuild the content part of the UI, leaving the control panel intact
-        if hasattr(root, "content_frame"):
-            root.content_frame.destroy()
-
-        content_frame = ttk.Frame(root)
-        content_frame.pack(fill="both", expand=True, padx=10, pady=5)
-        root.content_frame = content_frame
-
-        # Create a notebook with 6 tabs as requested
-        option_notebook = ttk.Notebook(content_frame)
-        option_notebook.pack(fill="both", expand=True, padx=5, pady=5)
-
-        # Create frames for all six tabs
-        call_ratio_tables_frame = ttk.Frame(option_notebook)
-        put_ratio_tables_frame = ttk.Frame(option_notebook)
-        call_ratio_spreads_frame = ttk.Frame(option_notebook)
-        put_ratio_spreads_frame = ttk.Frame(option_notebook)
-        curve_fitted_call_frame = ttk.Frame(option_notebook)
-        curve_fitted_put_frame = ttk.Frame(option_notebook)
-
-        # Add all tabs to the notebook
-        option_notebook.add(call_ratio_tables_frame, text="Call Ratio Tables")
-        option_notebook.add(put_ratio_tables_frame, text="Put Ratio Tables")
-        option_notebook.add(call_ratio_spreads_frame, text="Call Ratio Spreads")
-        option_notebook.add(put_ratio_spreads_frame, text="Put Ratio Spreads")
-        option_notebook.add(curve_fitted_call_frame, text="Curve Fitted Calls")
-        option_notebook.add(curve_fitted_put_frame, text="Curve Fitted Puts")
-
-        # Create displays for each tab
-        create_call_ratio_tables(call_ratio_tables_frame)
-        create_put_ratio_tables(put_ratio_tables_frame)
-        create_consolidated_display(call_ratio_spreads_frame, "calls")
-        create_consolidated_display(put_ratio_spreads_frame, "puts")
-        create_curve_fitted_call_table(curve_fitted_call_frame)
-        create_curve_fitted_put_table(curve_fitted_put_frame)
-
-        # Create top premium tables for calls and puts
-        create_top_premium_table(call_ratio_spreads_frame, "calls")
-        create_top_premium_table(put_ratio_spreads_frame, "puts")
+        # Rebuild the UI with new data
+        create_application_ui(root)
 
         root.status_label.config(text="Analysis complete")
 
